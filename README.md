@@ -24,7 +24,7 @@ This is a Streamlit application that demonstrates OpenAI's function calling capa
    ```
 4. Set up your environment variables:
    - Copy `.env.example` to `.env`
-   - Add your OpenAI API key to the `.env` file
+   - Add your OpenAI and Europeana API keys to the `.env` file
 
 ## Running the Application
 
