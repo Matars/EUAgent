@@ -39,7 +39,7 @@ The app will open in your default web browser.
 
 ## Example Queries
 
-Try asking the assistant whatever you like releted to Europeana cultural heritage or Europeana.
+Try asking the assistant whatever you like releted to European Cultural Heritage or Europeana.
 
 ## How It Works
 
