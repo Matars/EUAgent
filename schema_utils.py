@@ -63,26 +63,13 @@ def function_to_schema(func) -> dict:
 
 
 def get_function_descriptions() -> Dict[str, str]:
-    """
-    Get more detailed descriptions for our EU database functions.
-    These will supplement the docstrings in the actual function definitions.
-    """
     return {
-        "query_eu_regulations": (
-            "Search for EU regulations on a specific topic. "
-            "Topics include agriculture, environment, privacy, digital, and finance."
-        ),
-        "get_eu_statistics": (
-            "Get EU statistics for a specific country. "
-            "Available countries are Germany, France, Italy, Spain, and Poland. "
-            "Metrics include population, gdp, eu_contribution, and unemployment."
-        ),
-        "find_eu_institution": (
-            "Find information about EU institutions like the European Commission, "
-            "European Parliament, European Council, Council of the EU, "
-            "and European Central Bank."
+        "search_europeana": (
+            "Search Europeana's vast digital archive of European cultural heritage items. "
+            "You can search for documents, images, videos, and more using any query string."
         )
     }
+
 
 
 def enhance_schema(schema: dict, function_desc: Dict[str, str]) -> dict:
