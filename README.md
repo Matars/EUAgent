@@ -5,11 +5,11 @@ This is a Streamlit application that demonstrates OpenAI's function calling capa
 ## Current features
 
 -   Chat interface with AI assistant
--   Function calling to fetch Europeana's data:
+-   Function calling to fetch Europeana's data
 
 ## Planed
 
--   AI agent using tools to fetch Europeana's data with function calling.
+-   AI agent using tools to fetch all Europeana's APIs with function calling.
 
 ## Setup Instructions
 
