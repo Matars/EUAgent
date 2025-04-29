@@ -5,11 +5,11 @@ This is a Streamlit application that demonstrates OpenAI's function calling capa
 ## Current features
 
 -   Chat interface with AI assistant
--   Function calling to fetch Europeana's data:
+-   Function calling to fetch Europeana's data
 
 ## Planed
 
--   AI agent using tools to fetch Europeana's data with function calling.
+-   AI agent using tools to fetch all Europeana's APIs with function calling.
 
 ## Setup Instructions
 
@@ -39,7 +39,7 @@ The app will open in your default web browser.
 
 ## Example Queries
 
-Try asking the assistant whatever you like releted to European Cultural Heritage or Europeana.
+Try asking the assistant whatever you like related to European Cultural Heritage or Europeana.
 
 ## How It Works
 

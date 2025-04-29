@@ -65,11 +65,18 @@ def function_to_schema(func) -> dict:
 def get_function_descriptions() -> Dict[str, str]:
     return {
         "search_europeana": (
-            "Search Europeana's vast digital archive of European cultural heritage items. "
-            "You can search for documents, images, videos, and more using any query string."
+            "Use this function to search Europeana's digital archive for cultural heritage items "
+            "when the user asks general questions or wants to discover items. "
+            "Examples: 'Show me Dutch paintings', 'Find images of the Eiffel Tower'."
+        ),
+        "get_europeana_record": (
+            "Use this function when the user asks for detailed metadata about a specific item "
+            "or when you need comprehensive information about a known Europeana record. "
+            "This function requires a Europeana record ID. "
+            "Examples: 'Show me the full metadata for record 90402/RP_P_1984_87', "
+            "'Give me all details about this artwork'."
         )
     }
-
 
 
 def enhance_schema(schema: dict, function_desc: Dict[str, str]) -> dict:
