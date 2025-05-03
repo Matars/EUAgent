@@ -9,7 +9,7 @@ import os
 import logging
 from dotenv import load_dotenv
 
-from functions import search_europeana, get_europeana_record
+from functions import search_europeana, get_europeana_record, search_europeana_entities, get_europeana_entity
 from tools import OPENAI_TOOLS
 
 # Setup basic logging configuration
@@ -27,21 +27,32 @@ client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 st.title("Europeana Database Assistant")
 st.write("Ask questions about EU Cultural Heritage using Europeana's APIs.")
 
-# Maintain session messages
+# Initialize session state
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are an AI agent for Europeana, the EU digital cultural heritage platform. "
-                "Use search_europeana for general searches and discovery. "
-                "Use get_europeana_record when the user asks for detailed metadata about specific items. "
-                "When search results include record IDs and the user asks for more details, call get_europeana_record."
-            )
-        }
-    ]
+    st.session_state.messages = []
+    # System message will be used by OpenAI but not displayed
+    st.session_state.system_message = {
+        "role": "system",
+        "content": (
+            "You are an AI assistant for Europeana, the EU digital cultural heritage platform. "
+            "Follow these guidelines for function calling:\n\n"
+            "1. For searching cultural heritage objects (artworks, books, etc.):\n"
+            "   - Use search_europeana for general searches\n"
+            "   - Use get_europeana_record when users ask for detailed metadata about specific items\n"
+            "   - When search results include record IDs and users ask for more details, call get_europeana_record\n\n"
+            "2. For searching contextual entities (people, places, concepts, etc.):\n"
+            "   - Use search_europeana_entities when users ask about cultural figures, historical periods, "
+            "geographical locations, or artistic movements\n"
+            "   - Use get_europeana_entity when users ask for detailed information about specific entities\n\n"
+            "3. Combine approaches when appropriate:\n"
+            "   - After finding relevant entities, you might search for related cultural objects\n"
+            "   - When discussing objects, you might provide contextual entity information\n"
+            "4. Always prefer specific functions (get_*) when you have exact identifiers\n"
+            "5. For broad exploratory queries, start with search functions"
+        )
+    }
 
-# Display previous messages
+# Display only user and assistant messages (excluding system messages)
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
@@ -59,7 +70,9 @@ def process_response(response):
 
         TOOL_FUNCTIONS = {
             "search_europeana": search_europeana,
-            "get_europeana_record": get_europeana_record
+            "get_europeana_record": get_europeana_record,
+            "search_europeana_entities": search_europeana_entities,
+            "get_europeana_entity": get_europeana_entity
         }
 
         tool_results = []
@@ -90,7 +103,8 @@ def process_response(response):
                     "content": error_msg
                 })
 
-        messages_for_api = [
+        # Include system message in the API call but not in displayed messages
+        messages_for_api = [st.session_state.system_message] + [
             {"role": m["role"], "content": m["content"]}
             for m in st.session_state.messages if m["role"] in ["user", "assistant"]
         ] + [
@@ -120,9 +134,10 @@ if prompt := st.chat_input(prompt_text):
         st.write(prompt)
 
     with st.spinner("Thinking..."):
+        # Include system message in the API call but not in displayed messages
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[
+            messages=[st.session_state.system_message] + [
                 {"role": msg["role"], "content": msg["content"]}
                 for msg in st.session_state.messages
             ],
@@ -146,10 +161,12 @@ with st.sidebar:
         Try questions like:
         - "Show me Dutch paintings from 17th century"
         - "Give me images related to European Parliament"
+        - "Find information about Vincent van Gogh"
+        - "Tell me about the Renaissance period"
     """)
     st.divider()
     st.subheader("Powered by Europeana API")
-    st.write("Searches cultural heritage items from EU institutions and collections.")
+    st.write("Searches cultural heritage items and entities from EU institutions and collections.")
     st.divider()
     st.subheader("Requires .env")
     st.info("You need both an OpenAI and Europeana API key in your .env file.")
