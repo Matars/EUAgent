@@ -1,7 +1,7 @@
 """
 OpenAI function tool definitions for the Europeana search AI agent.
 """
-from functions import search_europeana, get_europeana_record
+from functions import search_europeana, get_europeana_record, search_europeana_entities, get_europeana_entity
 from schema_utils import function_to_schema, get_function_descriptions, enhance_schema
 
 # Generate schema and descriptions
@@ -69,5 +69,70 @@ enhanced_record_schema["function"]["parameters"]["properties"]["record_id"]["exa
     "https://www.europeana.eu/item/9200396/9C6B5C6E4C7B8D9A1B2C3D4E5F6G7H8"
 ]
 
-# Register the tools
-OPENAI_TOOLS = [enhanced_search_schema, enhanced_record_schema]
+# Update tools.py
+
+# ... (keep existing imports and setup)
+
+# Add new entity schemas
+entity_search_schema = function_to_schema(search_europeana_entities)
+enhanced_entity_search_schema = enhance_schema(entity_search_schema, function_descriptions)
+
+# Initialize and enhance properties
+enhanced_entity_search_schema.setdefault("function", {}).setdefault("parameters", {}).setdefault("properties", {})
+
+enhanced_entity_search_schema["function"]["parameters"]["properties"].setdefault("query", {})[
+    "description"
+] = "The search query for entities (e.g., 'Vincent van Gogh', 'Art Nouveau', 'Paris')"
+
+enhanced_entity_search_schema["function"]["parameters"]["properties"].setdefault("type", {})[
+    "description"
+] = "Entity type to filter: agent, place, concept, timespan, organization, or all"
+
+enhanced_entity_search_schema["function"]["parameters"]["properties"].setdefault("scope", {})[
+    "description"
+] = "Optional scope filter (use 'europeana' to limit to entities referenced in Europeana)"
+
+enhanced_entity_search_schema["function"]["parameters"]["properties"].setdefault("lang", {})[
+    "description"
+] = "Preferred language for results (2-letter ISO code, default: en)"
+
+enhanced_entity_search_schema["function"]["parameters"]["properties"].setdefault("limit", {})[
+    "description"
+] = "Number of results to return (default: 5, max: 100)"
+
+# Add enum values for type
+enhanced_entity_search_schema["function"]["parameters"]["properties"]["type"]["enum"] = [
+    "agent", "place", "concept", "timespan", "organization", "all"
+]
+
+# Setup get_europeana_entity schema
+entity_schema = function_to_schema(get_europeana_entity)
+enhanced_entity_schema = enhance_schema(entity_schema, function_descriptions)
+
+# Initialize and enhance properties
+enhanced_entity_schema.setdefault("function", {}).setdefault("parameters", {}).setdefault("properties", {})
+
+enhanced_entity_schema["function"]["parameters"]["properties"].setdefault("entity_id", {})[
+    "description"
+] = "The Europeana entity ID (e.g. '59904' for agent/59904)"
+
+enhanced_entity_schema["function"]["parameters"]["properties"].setdefault("entity_type", {})[
+    "description"
+] = "The entity type: agent, place, concept, timespan, or organization"
+
+enhanced_entity_schema["function"]["parameters"]["properties"].setdefault("lang", {})[
+    "description"
+] = "Preferred language for metadata (2-letter ISO code, default: en)"
+
+# Add enum values for entity_type
+enhanced_entity_schema["function"]["parameters"]["properties"]["entity_type"]["enum"] = [
+    "agent", "place", "concept", "timespan", "organization"
+]
+
+# Register the tools (Always update OPENAI_TOOLS to include new functions)
+OPENAI_TOOLS = [
+    enhanced_search_schema,
+    enhanced_record_schema,
+    enhanced_entity_search_schema,
+    enhanced_entity_schema
+]

@@ -75,6 +75,18 @@ def get_function_descriptions() -> Dict[str, str]:
             "This function requires a Europeana record ID. "
             "Examples: 'Show me the full metadata for record 90402/RP_P_1984_87', "
             "'Give me all details about this artwork'."
+        ),
+        "search_europeana_entities": (
+            "Use this function to search for entities (people, places, concepts, time periods, organizations) "
+            "in Europeana's Entity API. Useful when the user asks about cultural figures, historical periods, "
+            "or geographical locations. Examples: 'Find information about Vincent van Gogh', "
+            "'What places are associated with Art Nouveau?'"
+        ),
+        "get_europeana_entity": (
+            "Use this function to get detailed information about a specific Europeana entity "
+            "(person, place, concept, time period, or organization). Requires the entity ID and type. "
+            "Examples: 'Get details about entity agent/59904', "
+            "'Tell me more about the Art Nouveau concept'"
         )
     }
 
