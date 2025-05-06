@@ -69,10 +69,6 @@ enhanced_record_schema["function"]["parameters"]["properties"]["record_id"]["exa
     "https://www.europeana.eu/item/9200396/9C6B5C6E4C7B8D9A1B2C3D4E5F6G7H8"
 ]
 
-# Update tools.py
-
-# ... (keep existing imports and setup)
-
 # Add new entity schemas
 entity_search_schema = function_to_schema(search_europeana_entities)
 enhanced_entity_search_schema = enhance_schema(entity_search_schema, function_descriptions)

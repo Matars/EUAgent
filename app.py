@@ -85,6 +85,10 @@ def process_response(response):
             if tool_name in TOOL_FUNCTIONS:
                 try:
                     function_response = TOOL_FUNCTIONS[tool_name](**function_args)
+                    # Ensure we have a valid response
+                    if not function_response or function_response.strip() == "":
+                        function_response = f"No results found for {tool_name} with these parameters"
+                    logging.info(f"Function response: {function_response}")  # Log the actual response
                 except Exception as e:
                     function_response = f"Error while executing function '{tool_name}': {str(e)}"
                     logging.error(function_response)
@@ -92,7 +96,7 @@ def process_response(response):
                 tool_results.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
-                    "content": str(function_response)  # Ensure content is always a string
+                    "content": str(function_response)
                 })
             else:
                 error_msg = f"Tool '{tool_name}' not implemented."
@@ -119,14 +123,42 @@ def process_response(response):
             *tool_results
         ]
 
-        final_response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages_for_api,
-            tools=OPENAI_TOOLS
+        try:
+            final_response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages_for_api,
+                tools=OPENAI_TOOLS
+            )
+            
+            # Return the message content only if it exists
+            if final_response.choices[0].message.content:
+                return final_response.choices[0].message
+            else:
+                # If no content, return the first tool response if available
+                if tool_results and tool_results[0]['content']:
+                    return openai.types.chat.ChatCompletionMessage(
+                        role="assistant",
+                        content=tool_results[0]['content']
+                    )
+                return openai.types.chat.ChatCompletionMessage(
+                    role="assistant",
+                    content="I found some information but couldn't format it properly. Here are the raw results."
+                )
+            
+        except Exception as e:
+            logging.error(f"Error in final response: {str(e)}")
+            return openai.types.chat.ChatCompletionMessage(
+                role="assistant",
+                content="There was an error processing your request. Please try again."
+            )
+
+    # Handle case where message has no content
+    if not message.content:
+        return openai.types.chat.ChatCompletionMessage(
+            role="assistant",
+            content="I couldn't generate a response. Please try rephrasing your question."
         )
-
-        return final_response.choices[0].message
-
+        
     return message
 
 # Prompt input from the user
@@ -152,22 +184,30 @@ if prompt := st.chat_input(prompt_text):
                 messages=api_messages,
                 tools=OPENAI_TOOLS
             )
+            
             assistant_message = process_response(response)
             
-            # Append final message and show it
-            if assistant_message.content is not None:
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": assistant_message.content}
-                )
+            # Ensure we always have content to display
+            if assistant_message.content:
+                st.session_state.messages.append({
+                    "role": assistant_message.role,
+                    "content": assistant_message.content
+                })
                 with st.chat_message("assistant"):
                     st.write(assistant_message.content)
             else:
-                st.error("Received empty response from the assistant")
+                error_msg = "Sorry, I couldn't process your request. Please try again."
+                st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                with st.chat_message("assistant"):
+                    st.write(error_msg)
                 
         except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+            error_msg = f"An error occurred: {str(e)}"
+            st.session_state.messages.append({"role": "assistant", "content": error_msg})
+            with st.chat_message("assistant"):
+                st.write(error_msg)
             logging.error(f"API Error: {str(e)}")
-
+            
 # Sidebar with app info
 with st.sidebar:
     st.header("About This App")
