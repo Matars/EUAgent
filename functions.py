@@ -26,8 +26,8 @@ def search_europeana(query: str, type: str = "TEXT", limit: int = 5) -> str:
     logging.info(f"Searching Europeana for query='{query}', type='{type}', limit={limit}")
     
     params = {
-        "query": query,
         "wskey": EUROPEANA_API_KEY,
+        "query": query,
         "rows": limit,
         "qf": f"TYPE:{type.upper()}",
         "profile": "standard"
