@@ -38,25 +38,25 @@ if "messages" not in st.session_state:
             "Follow these guidelines for function calling:\n\n"
             "1. For searching cultural heritage objects (artworks, books, etc.):\n"
             "   - Use search_europeana for general searches\n"
-            "   - Use get_europeana_record when users ask for detailed metadata about specific items\n"
+            "2. Use get_europeana_record when users ask for detailed metadata about specific items\n"
             "   - When search results include record IDs and users ask for more details, call get_europeana_record\n\n"
-            "2. For searching contextual entities (people, places, concepts, etc.):\n"
+            "3. For searching contextual entities (people, places, concepts, etc.):\n"
             "   - Use search_europeana_entities when users ask about cultural figures, historical periods, "
             "geographical locations, or artistic movements\n"
             "   - Use get_europeana_entity when users ask for detailed information about specific entities\n\n"
-            "3. Combine approaches when appropriate:\n"
+            "4. Combine approaches when appropriate:\n"
             "   - After finding relevant entities, you might search for related cultural objects\n"
             "   - When discussing objects, you might provide contextual entity information\n"
-            "4. Always prefer specific functions (get_*) when you have exact identifiers\n"
-            "5. For broad exploratory queries, start with search functions"
+            "5. Always prefer specific functions (get_*) when you have exact identifiers\n"
+            "6. For broad exploratory queries, start with search functions"
         )
     }
 
 # Display only user and assistant messages (excluding system messages)
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
-
+    if message["role"] in ["user", "assistant"]:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
 
 def process_response(response):
     """
@@ -92,7 +92,7 @@ def process_response(response):
                 tool_results.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
-                    "content": function_response
+                    "content": str(function_response)  # Ensure content is always a string
                 })
             else:
                 error_msg = f"Tool '{tool_name}' not implemented."
@@ -103,17 +103,21 @@ def process_response(response):
                     "content": error_msg
                 })
 
-        # Include system message in the API call but not in displayed messages
-        messages_for_api = [st.session_state.system_message] + [
-            {"role": m["role"], "content": m["content"]}
-            for m in st.session_state.messages if m["role"] in ["user", "assistant"]
-        ] + [
+        # Prepare messages for API including system message but not displaying it
+        messages_for_api = [
+            st.session_state.system_message,
+            *[
+                {"role": m["role"], "content": str(m["content"]) if m["content"] is not None else ""}
+                for m in st.session_state.messages 
+                if m["role"] in ["user", "assistant"]
+            ],
             {
                 "role": "assistant",
-                "content": None,
+                "content": "",  # Never use null content
                 "tool_calls": message.tool_calls
-            }
-        ] + tool_results
+            },
+            *tool_results
+        ]
 
         final_response = client.chat.completions.create(
             model="gpt-4o",
@@ -125,7 +129,6 @@ def process_response(response):
 
     return message
 
-
 # Prompt input from the user
 prompt_text = "Ask anything about Europeana..."
 if prompt := st.chat_input(prompt_text):
@@ -134,24 +137,36 @@ if prompt := st.chat_input(prompt_text):
         st.write(prompt)
 
     with st.spinner("Thinking..."):
-        # Include system message in the API call but not in displayed messages
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[st.session_state.system_message] + [
-                {"role": msg["role"], "content": msg["content"]}
-                for msg in st.session_state.messages
-            ],
-            tools=OPENAI_TOOLS
-        )
-
-    assistant_message = process_response(response)
-
-    # Append final message and show it
-    st.session_state.messages.append(
-        {"role": "assistant", "content": assistant_message.content}
-    )
-    with st.chat_message("assistant"):
-        st.write(assistant_message.content)
+        try:
+            # Prepare messages ensuring no null content
+            api_messages = [
+                st.session_state.system_message,
+                *[
+                    {"role": msg["role"], "content": str(msg["content"]) if msg["content"] is not None else ""}
+                    for msg in st.session_state.messages
+                ]
+            ]
+            
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=api_messages,
+                tools=OPENAI_TOOLS
+            )
+            assistant_message = process_response(response)
+            
+            # Append final message and show it
+            if assistant_message.content is not None:
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": assistant_message.content}
+                )
+                with st.chat_message("assistant"):
+                    st.write(assistant_message.content)
+            else:
+                st.error("Received empty response from the assistant")
+                
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+            logging.error(f"API Error: {str(e)}")
 
 # Sidebar with app info
 with st.sidebar:
