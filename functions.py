@@ -5,10 +5,13 @@ import os
 import requests
 import logging
 from typing import Optional
+from dotenv import load_dotenv
 
-# Europeana API base URL
-EUROPEANA_API_BASE = "https://api.europeana.eu/record/v2/search.json"
-EUROPEANA_API_KEY = os.getenv("EUROPEANA_API_KEY")
+# Load environment variables
+load_dotenv()
+
+# Europeana API KEY
+EUROPEANA_API_KEY = os.getenv("EUROPEANA_SECRET_API_KEY")
 
 ## Search API
 def search_europeana(query: str, type: str = "TEXT", limit: int = 5) -> str:
@@ -25,6 +28,7 @@ def search_europeana(query: str, type: str = "TEXT", limit: int = 5) -> str:
     """
     logging.info(f"Searching Europeana for query='{query}', type='{type}', limit={limit}")
     
+    url = "https://api.europeana.eu/record/v2/search.json"
     params = {
         "wskey": EUROPEANA_API_KEY,
         "query": query,
@@ -34,7 +38,7 @@ def search_europeana(query: str, type: str = "TEXT", limit: int = 5) -> str:
     }
 
     try:
-        response = requests.get(EUROPEANA_API_BASE, params=params)
+        response = requests.get(url, params=params)
         logging.debug(f"Request URL: {response.url}")
         response.raise_for_status()
         data = response.json()
