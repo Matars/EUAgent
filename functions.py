@@ -224,31 +224,101 @@ def search_europeana_entities(
 
         results = []
         for item in data.get("items", [])[:limit]:
-            entity_type = item.get("type", "entity").lower()
-            pref_label = item.get("prefLabel", {}).get(lang, ["Unnamed"])[0]
+            # Get entity type (already capitalized in the response)
+            entity_type = item.get("type", "entity")
+            
+            # Handle prefLabel
+            pref_label = item.get("prefLabel", {})
+            if isinstance(pref_label, dict):
+                pref_label = pref_label.get(lang, pref_label.get("en", ["Unnamed"]))
+                if isinstance(pref_label, list):
+                    pref_label = pref_label[0] if pref_label else "Unnamed"
+            name = pref_label if pref_label else "Unnamed"
+            
             entity_id = item.get("id", "").split("/")[-1]
             
-            result = (
-                f"**Type:** {entity_type.capitalize()}\n"
-                f"**Name:** {pref_label}\n"
-                f"**ID:** {entity_id}\n"
+            # Build the result sections
+            result = [
+                f"**Type:** {entity_type}",
+                f"**Name:** {name}",
+                f"**ID:** {entity_id}",
                 f"**Europeana URI:** {item.get('id')}"
-            )
+            ]
+            
+            # Add date of birth if available
+            if "dateOfBirth" in item and item["dateOfBirth"]:
+                dob = item["dateOfBirth"]
+                if isinstance(dob, list) and dob:
+                    result.append(f"**Date of Birth:** {dob[0]}")
+                elif isinstance(dob, str):
+                    result.append(f"**Date of Birth:** {dob}")
+            
+            # Add date of death if available
+            if "dateOfDeath" in item and item["dateOfDeath"]:
+                dod = item["dateOfDeath"]
+                if isinstance(dod, list) and dod:
+                    result.append(f"**Date of Death:** {dod[0]}")
+                elif isinstance(dod, str):
+                    result.append(f"**Date of Death:** {dod}")
+            
+            # Add notes if available
+            if "note" in item:
+                note = item["note"]
+                if isinstance(note, dict):
+                    note_text = note.get(lang, note.get("en", ""))
+                    if isinstance(note_text, list):
+                        note_text = ", ".join(note_text) if note_text else ""
+                    if note_text:
+                        result.append(f"**Notes:** {note_text}")
+                elif isinstance(note, str):
+                    result.append(f"**Notes:** {note}")
+            
+            # Add description if available
+            if "description" in item:
+                description = item["description"]
+                if isinstance(description, dict):
+                    desc_text = description.get(lang, description.get("en", ""))
+                    if isinstance(desc_text, list):
+                        desc_text = desc_text[0] if desc_text else ""
+                    if desc_text:
+                        result.append(f"**Description:** {desc_text}")
+            
+            # Add europeanaRole if available
+            if "europeanaRole" in item:
+                roles = item["europeanaRole"]
+                if isinstance(roles, list) and roles:
+                    # Extract the role name after the last slash
+                    role_names = [role.split("/")[-1] for role in roles]
+                    result.append(f"**Europeana Role:** {', '.join(role_names)}")
+            
+            # Add country information if available
+            if "country" in item and isinstance(item["country"], dict):
+                country = item["country"].get("prefLabel", {})
+                if isinstance(country, dict):
+                    country_name = country.get(lang, country.get("en", "Unknown country"))
+                    if isinstance(country_name, list):
+                        country_name = country_name[0] if country_name else "Unknown country"
+                    result.append(f"**Country:** {country_name}")
+            
+            # Add homepage if available
+            if "homepage" in item:
+                homepage = item["homepage"]
+                if homepage:
+                    result.append(f"**Homepage:** {homepage}")
             
             # Add alternative labels if available
             if "altLabel" in item:
                 alt_labels = item["altLabel"].get(lang, [])
                 if alt_labels:
-                    result += f"\n**Also known as:** {', '.join(alt_labels)}"
+                    result.append(f"**Also known as:** {', '.join(alt_labels)}")
             
-            results.append(result)
+            results.append("\n".join(result))
 
         return f"Found {len(data['items'])} entities for '{query}':\n\n" + "\n\n".join(results)
 
     except requests.RequestException as e:
         return f"Error accessing Europeana Entity API: {str(e)}"
-
-
+    
 def get_europeana_entity(
     entity_id: str,
     entity_type: str,
